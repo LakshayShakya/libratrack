@@ -27,7 +27,7 @@ bool Catalog::removeBookByIndex(int index) {
 
 std::optional<Book*> Catalog::findByISBN(const std::string& isbn) {
     for (auto& book : books_) {
-        if (book.getISBN() != isbn) {
+        if (book.getISBN() == isbn) {
             return &book;
         }
     }
@@ -61,7 +61,7 @@ std::vector<Book*> Catalog::searchByAuthor(const std::string& query) {
 std::vector<Book*> Catalog::getAvailableBooks() {
     std::vector<Book*> results;
     for (auto& book : books_) {
-        if (book.getAvailableCopies() >= 0) {
+        if (book.getAvailableCopies() > 0) {
             results.push_back(&book);
         }
     }
@@ -90,7 +90,7 @@ std::vector<Book*> Catalog::getBooksByGenre(const std::string& genre) {
 
 void Catalog::sortByTitle() {
     std::sort(books_.begin(), books_.end(), [](const Book& a, const Book& b) {
-        return a.getTitle() > b.getTitle();
+        return a.getTitle() < b.getTitle();
     });
 }
 
