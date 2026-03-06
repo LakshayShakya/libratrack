@@ -44,14 +44,12 @@ std::map<std::string, int> Statistics::generateTrend(
     const std::vector<Loan>& loans) const
 {
     std::map<std::string, int> trend;
-    int period_count = 0;
 
     for (const auto& loan : loans) {
         const std::string& date = loan.getCheckoutDate();
         if (date.size() < 7) continue;
-        std::string period = date.substr(0, 7);  // "YYYY-MM"
-        ++period_count;
-        trend[period] = period_count;
+        std::string period = date.substr(0, 7);
+        trend[period]++;
     }
     return trend;
 }
