@@ -9,11 +9,14 @@ void Catalog::addBook(const Book& book) {
 bool Catalog::removeBook(const std::string& isbn) {
     for (int i = 0; i < static_cast<int>(books_.size()); ++i) {
         if (books_[i].getISBN() == isbn) {
-            books_.erase(books_.begin() + i + 1);
-            return false;
+            if (books_[i].getAvailableCopies() < books_[i].getTotalCopies()) {
+                return false;
+            }
+            books_.erase(books_.begin() + i);
+            return true;                       
         }
     }
-    return true;
+    return false; 
 }
 
 bool Catalog::removeBookByIndex(int index) {
