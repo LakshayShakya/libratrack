@@ -102,7 +102,46 @@ function Test-CppCompiler {
     return $false
 }
 
-# -- Install modern GCC via MSYS2 (self-contained, no Windows SDK needed) -----------
+# -- Install VS Build Tools (MSVC - most reliable on Windows) -----------------------
+function Install-VSBuildTools {
+    Write-Host "  Installing Visual Studio Build Tools (C++ workload)..." -ForegroundColor Yellow
+    Write-Host "  This may take several minutes..." -ForegroundColor Yellow
+    $prev = $ErrorActionPreference
+    $ErrorActionPreference = "Continue"
+    winget install --id Microsoft.VisualStudio.2022.BuildTools --silent `
+        --accept-package-agreements --accept-source-agreements `
+        --override "--quiet --add Microsoft.VisualStudio.Workload.VCTools --includeRecommended --norestart" 2>&1 | Out-Null
+    $ErrorActionPreference = $prev
+    Update-SessionPath
+
+    # VS Build Tools installs vcvarsall.bat - find and run it to activate MSVC env
+    $vswhere = "${env:ProgramFiles(x86)}\Microsoft Visual Studio\Installer\vswhere.exe"
+    if (Test-Path $vswhere) {
+        $vsPath = & $vswhere -latest -products * -requires Microsoft.VisualStudio.Component.VC.Tools.x86.x64 -property installationPath 2>&1
+        if ($vsPath) {
+            $vcvars = "$vsPath\VC\Auxiliary\Build\vcvars64.bat"
+            if (Test-Path $vcvars) {
+                # Import MSVC environment variables into current session
+                $envDump = cmd /c "`"$vcvars`" && set"
+                foreach ($line in $envDump) {
+                    if ($line -match '^([^=]+)=(.*)$') {
+                        [System.Environment]::SetEnvironmentVariable($Matches[1], $Matches[2], "Process")
+                    }
+                }
+            }
+        }
+    }
+
+    if (!(Get-Command cl -ErrorAction SilentlyContinue)) {
+        Write-Host "  [!] VS Build Tools installed but cl.exe not in PATH yet." -ForegroundColor Yellow
+        Write-Host "      A restart or new terminal may be needed." -ForegroundColor Yellow
+        return $false
+    }
+    Write-Host "  [OK] VS Build Tools (MSVC) ready." -ForegroundColor Green
+    return $true
+}
+
+# -- Install modern GCC via MSYS2 (fallback) ----------------------------------------
 function Install-ModernGCC {
     Write-Host "  Installing MSYS2 to get a modern MinGW GCC..." -ForegroundColor Yellow
     winget install --id MSYS2.MSYS2 --silent --accept-package-agreements --accept-source-agreements 2>&1 | Out-Null
@@ -119,7 +158,6 @@ function Install-ModernGCC {
     }
 
     Write-Host "  Updating MinGW GCC via pacman (may take a minute)..." -ForegroundColor Yellow
-    # Temporarily allow non-zero exit codes so pacman warnings don't abort the script
     $prev = $ErrorActionPreference
     $ErrorActionPreference = "Continue"
     & $msys2Bash -lc "pacman -Sy --noconfirm mingw-w64-x86_64-gcc mingw-w64-x86_64-make" 2>&1 | Out-Null
@@ -140,11 +178,22 @@ function Install-ModernGCC {
 if (!(Test-CppCompiler)) {
     $gppOld = (Get-Command g++ -ErrorAction SilentlyContinue) -and !(Test-GCCVersion)
     if ($gppOld) {
-        Write-Host "  [!] MinGW GCC is too old for C++17 - installing updated GCC via MSYS2..." -ForegroundColor Yellow
+        Write-Host "  [!] MinGW GCC is too old for C++17 - installing VS Build Tools..." -ForegroundColor Yellow
     } else {
-        Write-Host "  [!] No C++17 compiler found - installing MinGW GCC via MSYS2..." -ForegroundColor Yellow
+        Write-Host "  [!] No C++17 compiler found - installing VS Build Tools..." -ForegroundColor Yellow
     }
-    Install-ModernGCC
+    $vsOk = Install-VSBuildTools
+    if (!$vsOk) {
+        Write-Host "  [!] Falling back to MSYS2/MinGW GCC..." -ForegroundColor Yellow
+        Install-ModernGCC
+    }
+    if (!(Test-CppCompiler)) {
+        Write-Host "  [X] Could not set up a C++17 compiler automatically." -ForegroundColor Red
+        Write-Host "      Please install one manually and re-run setup.ps1:" -ForegroundColor Yellow
+        Write-Host "        VS Build Tools: https://visualstudio.microsoft.com/downloads/" -ForegroundColor White
+        Write-Host "        MSYS2/MinGW   : https://www.msys2.org/" -ForegroundColor White
+        exit 1
+    }
     Write-Host "  [OK] C++17 compiler ready." -ForegroundColor Green
 }
 Write-Host ""
