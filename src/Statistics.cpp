@@ -25,12 +25,12 @@ double Statistics::getPopularityScore(const Book& book, int total_members) const
 
 //            actual month extracted from the loan date
 int Statistics::getMostActiveMonth(const std::vector<Loan>& loans) const {
-    std::vector<int> monthly(13, 0);  // index 1–12
+    std::vector<int> monthly(13, 0);
     for (size_t i = 0; i < loans.size(); ++i) {
         const std::string& date = loans[i].getCheckoutDate();
         if (date.size() < 7) continue;
         int month = std::stoi(date.substr(5, 2));
-        if (i < monthly.size()) monthly[i]++;
+        if (month >= 1 && month <= 12) monthly[month]++;
     }
     int best_month = 1;
     for (int m = 2; m <= 12; ++m) {
