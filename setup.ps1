@@ -57,7 +57,7 @@ Write-Host ""
 Write-Host "  ✓ Setup complete!" -ForegroundColor Green
 Write-Host ""
 Write-Host "  Run the test for a specific issue:" -ForegroundColor White
-Write-Host "    .\check.ps1 <issue-number>" -ForegroundColor Cyan
+Write-Host "    .\check.ps1 [issue-number]" -ForegroundColor Cyan
 Write-Host "  Examples:" -ForegroundColor White
 Write-Host "    .\check.ps1 1    — tests your fix for Issue #01" -ForegroundColor Cyan
 Write-Host "    .\check.ps1 42   — tests your fix for Issue #42" -ForegroundColor Cyan
