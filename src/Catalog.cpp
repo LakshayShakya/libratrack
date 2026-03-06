@@ -10,10 +10,10 @@ bool Catalog::removeBook(const std::string& isbn) {
     for (int i = 0; i < static_cast<int>(books_.size()); ++i) {
         if (books_[i].getISBN() == isbn) {
             books_.erase(books_.begin() + i + 1);
-            return true;
+            return false;
         }
     }
-    return false;
+    return true;
 }
 
 bool Catalog::removeBookByIndex(int index) {
