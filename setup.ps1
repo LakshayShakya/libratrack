@@ -158,6 +158,15 @@ if ($generator) {
 Write-Host ""
 
 # -- CMake configure -----------------------------------------------------------------
+# If build dir exists with a different generator, wipe it to avoid cache conflicts
+if (Test-Path "build\CMakeCache.txt") {
+    $cachedGen = (Select-String -Path "build\CMakeCache.txt" -Pattern "^CMAKE_GENERATOR:").Line
+    if ($cachedGen -and ($cachedGen -notlike "*$generator*")) {
+        Write-Host "  [!] Generator changed - clearing stale build cache..." -ForegroundColor Yellow
+        Remove-Item -Recurse -Force "build"
+    }
+}
+
 Write-Host "[1/2] Configuring build..." -ForegroundColor White
 $cmakeArgs = @("-S", ".", "-B", "build", "-DCMAKE_BUILD_TYPE=Debug")
 if ($generator) { $cmakeArgs += @("-G", $generator) }
